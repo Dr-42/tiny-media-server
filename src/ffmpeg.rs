@@ -23,11 +23,13 @@ pub fn check_ffmpeg_present() {
     );
 }
 
-pub struct FfmpegStream(ChildStdout);
+pub struct FfmpegStream {
+    out: ChildStdout,
+}
 
 impl FfmpegStream {
     pub fn from_file(path: PathBuf) -> Result<Self, String> {
-        Command::new("ffmpeg")
+        let command = Command::new("ffmpeg")
             .stderr(Stdio::null())
             .stdout(Stdio::piped())
             .args(["-hwaccel", "cuda", "-hwaccel_output_format", "cuda"])
@@ -43,8 +45,9 @@ impl FfmpegStream {
             .map_err(|e| e.to_string())?
             .stdout
             .take()
-            .ok_or_else(|| "ffmpeg stdout closed".into())
-            .map(Self)
+            .ok_or_else(|| "ffmpeg stdout closed".to_string());
+
+        Ok(FfmpegStream { out: command? })
     }
 }
 
@@ -53,7 +56,7 @@ impl<'r> Responder<'r, 'static> for FfmpegStream {
     fn respond_to(self, _: &'r Request<'_>) -> response::Result<'static> {
         Response::build()
             .header(ContentType::MP4)
-            .streamed_body(self.0)
+            .streamed_body(self.out)
             .ok()
     }
 }
@@ -85,7 +88,7 @@ impl Thumbnail {
                 "-of",
                 "default=noprint_wrappers=1:nokey=1",
             ])
-            .arg(&path)
+            .arg(path)
             .output()
             .await
             .ok()?

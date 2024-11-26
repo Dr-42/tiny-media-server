@@ -25,11 +25,11 @@ impl MediaPath {
     pub fn media_list(&self) -> Vec<PathBuf> {
         let base = self.base_dir();
 
-        walkdir::WalkDir::new(&base)
+        walkdir::WalkDir::new(base)
             .into_iter()
             .filter_map(Result::ok)
             .filter(|entry| is_supported_format(entry.path()))
-            .map(|e| e.path().strip_prefix(&base).unwrap().to_owned())
+            .map(|e| e.path().strip_prefix(base).unwrap().to_owned())
             .collect::<Vec<_>>()
     }
 }
