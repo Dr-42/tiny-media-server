@@ -30,11 +30,15 @@ impl FfmpegStream {
         Command::new("ffmpeg")
             .stderr(Stdio::null())
             .stdout(Stdio::piped())
+            .args(["-hwaccel", "cuda", "-hwaccel_output_format", "cuda"])
             .arg("-i")
             .arg(path)
-            .args(["-listen", "1"])
-            .args(["-f", "mp4", "-movflags", "frag_keyframe+empty_moov"])
-            .args(["pipe:1"])
+            .args(["-c:v", "h264_nvenc", "-c:a", "aac"])
+            .arg("-preset")
+            .arg("slow")
+            .args(["-f", "mp4"])
+            .args(["-movflags", "frag_keyframe+empty_moov+faststart"])
+            .arg("pipe:1")
             .spawn()
             .map_err(|e| e.to_string())?
             .stdout
